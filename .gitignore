@@ -1,0 +1,14 @@
+*.pyc
+*.swp
+*~
+data/*
+/venv
+.idea
+*.iml
+out.csv
+ignore
+*.out
+*.log
+*.gz
+*.aux
+mp3_report.pdf
