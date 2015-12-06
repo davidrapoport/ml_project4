@@ -59,7 +59,11 @@ def write_csv(compounds_file, activity_file, activity_index, headerskip, name):
             # get the molecule
             molsmile = smile_hash[str(mol[0])]
             mole = Chem.MolFromSmiles(molsmile)
-            vect = AllChem.GetMorganFingerprintAsBitVect(mole, 3, nBits=4096)
+            try:
+                vect = AllChem.GetMorganFingerprintAsBitVect(mole, 3, nBits=4096)
+            except Exception, e:
+                print "ERROR with CID: %s" % mol[0]
+                continue
             arr = np.zeros((1,))
             DataStructs.ConvertToNumpyArray(vect, arr)
             arr = np.insert(arr, 0, mol[0])
@@ -82,28 +86,28 @@ def write_csv(compounds_file, activity_file, activity_index, headerskip, name):
             writer.writerow(X[idx])
 
 if __name__ == '__main__':
-    idlist = [1915, 1815]
-    actidx = 3
-    headerskip = 6
-    for filenum in idlist:
-        compfile = "./data/compounds/aid_%d_compounds.txt" % filenum
-        actfile = "./data/assays/aid_%d_assays.csv" % filenum
-        name = "aid_%d_data" % filenum
-        write_csv(compfile, actfile, actidx, headerskip, name)
-    idlist = [2358, 463213, 463215, 488912, 488915, 488917, 488918, 492992, 504607, 624504, 651739, 651744, 652065]
-    actidx = 3
-    headerskip = 5
-    for filenum in idlist:
-        compfile = "./data/compounds/aid_%d_compounds.txt" % filenum
-        actfile = "./data/assays/aid_%d_assays.csv" % filenum
-        name = "aid_%d_data" % filenum
-        write_csv(compfile, actfile, actidx, headerskip, name)
+    # idlist = [1915, 1815]
+    # actidx = 3
+    # headerskip = 6
+    # for filenum in idlist:
+    #     compfile = "./data/compounds/aid_%d_compounds.txt" % filenum
+    #     actfile = "./data/assays/aid_%d_assays.csv" % filenum
+    #     name = "aid_%d_data" % filenum
+    #     write_csv(compfile, actfile, actidx, headerskip, name)
+    # idlist = [2358, 463213, 463215, 488912, 488915, 488917, 488918, 492992, 504607, 624504, 651739, 651744, 652065]
+    # actidx = 3
+    # headerskip = 5
+    # for filenum in idlist:
+    #     compfile = "./data/compounds/aid_%d_compounds.txt" % filenum
+    #     actfile = "./data/assays/aid_%d_assays.csv" % filenum
+    #     name = "aid_%d_data" % filenum
+    #     write_csv(compfile, actfile, actidx, headerskip, name)
     filenum = 1851
     actidxs = [11, 38, 65, 92, 119]
     namelist = ['2c19', '2d6', '3a4', '1a2', '2c9']
     headerskip = 9
-    compfile = './dta/compounds/aid_%d_compounds.txt' % filenum
-    actfile = "./data/assays/aid_%d_assays.csv" % filename
+    compfile = './data/compounds/aid_%d_compounds.txt' % filenum
+    actfile = "./data/assays/aid_%d_assays.csv" % filenum
     for idx, act in enumerate(actidxs):
         name = "aid_1851_%s_data" %  namelist[idx]
         write_csv(compfile, actfile, act, headerskip, name)
