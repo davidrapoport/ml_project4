@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import datetime
+import pprint
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
@@ -15,8 +16,8 @@ output_size = 2
 
 num_bootstrap_rds = 500
 
-mbatch_size = 500
-bootstrap_size = 10000
+mbatch_size = 50
+bootstrap_size = 1500
 mbatch_per_bootstrap = bootstrap_size / mbatch_size
 
 valid_size = 200
@@ -36,8 +37,8 @@ if __name__ == '__main__':
     valid_fn_array = []
     dnn_array = []
 
-    np_rng = np.random.RandomState(89677)
-    theano_rng = RandomStreams(np_rng.randint(2 ** 30))
+    np_rng = np.random.RandomState(89773)
+    theano_rng = RandomStreams(np_rng.randint(2 ** 31))
 
     for n in xrange(num_tasks):
         log('> ... building the model for task %d' % (n))
@@ -61,43 +62,39 @@ if __name__ == '__main__':
         # add dnn and the functions to the list
         dnn_array.append(dnn)
 
-    # build the validation minibatch
-    val_tasks, val_x, val_y = np.ndarray(0), None, np.ndarray(0)
-    for task, inp, outp in get_minibatches(batch_size=1000, num_epochs=1, add_bias=True):
-        val_tasks = np.hstack((val_tasks, task.ravel()))
-        val_y = np.hstack((val_y, outp.ravel()))
-        if val_x is None:
-            val_x = inp
-        else:
-            val_x = np.vstack((val_x, inp))
-
     # # consider the tasks which have nonzero learning rate
     # active_tasks = [n for n in xrange(num_tasks)]
-    train_error_array = [[] for n in xrange(num_tasks)]
 
-    inp, outp = get_bootstraps(bootstrap_size)
-    valin, valout = get_bootstraps(bootstrap_size)
+    valin, valout = get_bootstraps(600)
     # BOOTSTRAP 20 DATASETS OF SIZE batch_size
 
     log('> ... bootstrapping all tasks datasets and building the functions')
-    train_fn_array = []
-    valid_fn_array = []
+    epoch_counter = 0
 
+    while(num_bootstrap_rds):
+        inp, outp = get_bootstraps(bootstrap_size)
+        train_error_array = [[] for n in xrange(num_tasks)]
+        train_fn_array = []
+        valid_fn_array = []
     # build the finetuning functions for these bootstraps
-    for idx, task in enumerate(dnn_array):
-        print(inp[idx].shape, outp[idx].shape, val_x.shape, val_y.shape)
-        train_fn, valid_fn = dnn.build_functions(
-            (inp[idx], outp[idx]), (valin[idx], valout[idx]), mbatch_size)
-        train_fn_array.append(train_fn)
-        valid_fn_array.append(valid_fn)
+        for idx, task in enumerate(dnn_array):
+            log('> ... building functions for task %d' % idx)
+            train_fn, valid_fn = dnn.build_functions(
+                (inp[idx], outp[idx]), (valin[idx], valout[idx]), mbatch_size)
+            train_fn_array.append(train_fn)
+            valid_fn_array.append(valid_fn)
+	        
 
-        # now we're going to train for 100 epochs per bootstrap
-    for taskidx in xrange(num_tasks):
-        for batchidx in xrange(mbatch_per_bootstrap):
-            train_error_array[taskidx].append(
-                train_fn_array[taskidx](index=batchidx))
-        log('> task %d, epoch %d, training error %f ' % (
-            taskidx, "6969.00", 100 * np.mean(train_error_array[n])) + '(%)')
+            # now we're going to train for 100 epochs per bootstrap
+        for taskidx in xrange(num_tasks):
+            for batchidx in xrange(mbatch_per_bootstrap):
+	        one_err = float(train_fn_array[taskidx](index=batchidx))
+                train_error_array[taskidx].append(one_err)
+            log('> task %d, epoch %d, training error %f ' % (
+                taskidx, epoch_counter, 100 * np.mean(train_error_array[taskidx])) + '(%)')
+        epoch_counter += 1
+
+    
 
         # # we validate after we finish one bootstrap
         # valid_error = validate_by_minibatch(valid_fn_array[n], cfg)
