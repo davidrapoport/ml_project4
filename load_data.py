@@ -69,3 +69,7 @@ def get_minibatches(batch_size, num_epochs, add_bias=False):
 			task = np.ones((1, batch_size))*i
 			yield task, batch, outs
 
+
+def get_bootstraps(bootstrap_size):
+	tasks, inps, outps =  zip(*get_minibatches(bootstrap_size, 1, False))
+	return inps, outps
