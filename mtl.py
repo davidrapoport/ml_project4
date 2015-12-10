@@ -1,6 +1,5 @@
 import numpy as np
 import sys
-import time
 import datetime
 
 from theano.tensor.shared_randomstreams import RandomStreams
@@ -16,9 +15,11 @@ output_size = 2
 
 num_bootstrap_rds = 500
 
-mbatch_size = 200
+mbatch_size = 500
 bootstrap_size = 10000
 mbatch_per_bootstrap = bootstrap_size / mbatch_size
+
+valid_size = 200
 
 num_tasks = len(task_specific_sizes)
 shared_layers_num = len(shared_layers_sizes)
@@ -73,28 +74,30 @@ if __name__ == '__main__':
     # # consider the tasks which have nonzero learning rate
     # active_tasks = [n for n in xrange(num_tasks)]
     train_error_array = [[] for n in xrange(num_tasks)]
+
     inp, outp = get_bootstraps(bootstrap_size)
+    valin, valout = get_bootstraps(bootstrap_size)
     # BOOTSTRAP 20 DATASETS OF SIZE batch_size
 
     log('> ... bootstrapping all tasks datasets and building the functions')
     train_fn_array = []
     valid_fn_array = []
 
-        # build the finetuning functions for these bootstraps
+    # build the finetuning functions for these bootstraps
     for idx, task in enumerate(dnn_array):
         print(inp[idx].shape, outp[idx].shape, val_x.shape, val_y.shape)
         train_fn, valid_fn = dnn.build_functions(
-            (inp[idx], outp[idx]), (val_x, val_y), mbatch_size)
+            (inp[idx], outp[idx]), (valin[idx], valout[idx]), mbatch_size)
         train_fn_array.append(train_fn)
         valid_fn_array.append(valid_fn)
 
         # now we're going to train for 100 epochs per bootstrap
-        for taskidx in xrange(num_tasks):
-            for batchidx in xrange(mbatch_per_bootstrap):
-                train_error_array[taskidx].append(
-                    train_fn_array[taskidx](index=batchidx))
-            log('> task %d, epoch %d, training error %f ' % (
-                taskidx, "6969.00", 100 * np.mean(train_error_array[n])) + '(%)')
+    for taskidx in xrange(num_tasks):
+        for batchidx in xrange(mbatch_per_bootstrap):
+            train_error_array[taskidx].append(
+                train_fn_array[taskidx](index=batchidx))
+        log('> task %d, epoch %d, training error %f ' % (
+            taskidx, "6969.00", 100 * np.mean(train_error_array[n])) + '(%)')
 
         # # we validate after we finish one bootstrap
         # valid_error = validate_by_minibatch(valid_fn_array[n], cfg)
