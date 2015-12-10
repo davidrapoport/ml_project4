@@ -56,6 +56,9 @@ class HiddenLayer(object):
         self.W = W
         self.b = b
 
+        self.delta_W = theano.shared(value = np.zeros((n_in,n_out), dtype=theano.config.floatX), name='delta_W')
+        self.delta_b = theano.shared(value = np.zeros_like(self.b.get_value(borrow=True), dtype=theano.config.floatX), name='delta_b')
+
         # theano symbolic expression to compute w^Tx + b
         lin_output = T.dot(input, self.W) + self.b
 
@@ -67,6 +70,7 @@ class HiddenLayer(object):
 
         # parameters of the model
         self.params = [self.W, self.b]
+        self.delta_params = [self.delta_W, self.delta_b]
 
 
 def _dropout_from_layer(theano_rng, hid_out, p):

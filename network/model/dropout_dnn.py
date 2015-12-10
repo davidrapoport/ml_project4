@@ -1,14 +1,14 @@
 import theano
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
-from layers.base_hiddenlayer import DropoutHiddenLayer, HiddenLayer, _dropout_from_layer
-from layers.logreg_layer import LogisticRegression
+from network.layers.base_hiddenlayer import DropoutHiddenLayer, HiddenLayer, _dropout_from_layer
+from network.layers.logreg_layer import LogisticRegression
 import collections
 
 
 class DNNDropout(object):
 
-    def __init__(self, numpy_rng, hidden_layers_sizes, n_ins, n_outs, theano_rng=None,
+    def __init__(self, np_rng, hidden_layers_sizes, n_ins, n_outs, theano_rng=None,
                  dnn_shared=None, shared_layers=[], input_dropout_factor=0.5, dropout_factor=0.5,
                  ):
 
@@ -55,14 +55,14 @@ class DNNDropout(object):
                 W = dnn_shared.layers[i].W
                 b = dnn_shared.layers[i].b
 
-            dropout_layer = DropoutHiddenLayer(rng=numpy_rng,
+            dropout_layer = DropoutHiddenLayer(rng=np_rng,
                                                input=dropout_layer_input,
                                                n_in=input_size,
                                                n_out=self.hidden_layers_sizes[
                                                    i],
                                                W=W, b=b,
                                                dropout_factor=self.dropout_factor)
-            hidden_layer = HiddenLayer(rng=numpy_rng,
+            hidden_layer = HiddenLayer(rng=np_rng,
                                        input=layer_input,
                                        n_in=input_size,
                                        n_out=self.hidden_layers_sizes[i],
@@ -80,7 +80,7 @@ class DNNDropout(object):
             n_in=self.hidden_layers_sizes[-1], n_out=self.n_outs)
 
         self.logLayer = LogisticRegression(
-            input=(1 - self.dropout_factor[-1]) * self.layers[-1].output,
+            input=(1 - self.dropout_factor) * self.layers[-1].output,
             n_in=self.hidden_layers_sizes[-1], n_out=self.n_outs,
             W=self.dropout_logLayer.W, b=self.dropout_logLayer.b)
 

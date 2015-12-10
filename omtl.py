@@ -1,7 +1,7 @@
 import numpy as np 
 from sklearn.linear_model import SGDClassifier
 from itertools import izip
-from util.load_data import get_minibatches, data
+from load_data import get_minibatches, data
 import pdb, time
 
 class Perceptron(object):

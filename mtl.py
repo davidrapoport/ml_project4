@@ -1,11 +1,12 @@
 import numpy as np
 import sys
+import time
 import datetime
 
 from theano.tensor.shared_randomstreams import RandomStreams
 
 from network.model.dropout_dnn import DNNDropout
-from util.load_data import get_minibatches
+from load_data import get_minibatches
 
 shared_layers_sizes = [512, 512]
 task_specific_sizes = [[512, 512]] * 20
@@ -25,7 +26,7 @@ shared_layers_num = len(shared_layers_sizes)
 
 def log(string):
 
-    sys.stderr.write('[' + str(datetime.now()) + '] ' + str(string) + '\n')
+    sys.stderr.write('[' + str(datetime.datetime.now()) + '] ' + str(string) + '\n')
 
 if __name__ == '__main__':
 
@@ -83,8 +84,9 @@ if __name__ == '__main__':
 
         # build the finetuning functions for these bootstraps
         for idx, task in enumerate(dnn_array):
+            print(inp[idx].shape, outp[idx].shape, val_x[idx].shape, val_y[idx].shape)
             train_fn, valid_fn = dnn.build_functions(
-                (inp[idx], outp[idx]), (val_x, val_y), mbatch_size)
+                (inp[idx], outp[idx]), (val_x[idx], val_y[idx]), mbatch_size)
             train_fn_array.append(train_fn)
             valid_fn_array.append(valid_fn)
 

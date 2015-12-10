@@ -35,6 +35,9 @@ class LogisticRegression(object):
         else:
             self.b = b
 
+        self.delta_W = theano.shared(value = np.zeros_like(self.W.get_value(borrow=True)), name = 'delta_W')
+        self.delta_b = theano.shared(value = np.zeros_like(self.b.get_value(borrow=True)), name = 'delta_b')
+
         # compute vector of class-membership probabilities in symbolic form
         self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
 
@@ -44,6 +47,7 @@ class LogisticRegression(object):
 
         # parameters of the model
         self.params = [self.W, self.b]
+        self.delta_params = [self.delta_W, self.delta_b]
 
     def negative_log_likelihood(self, y):
 
