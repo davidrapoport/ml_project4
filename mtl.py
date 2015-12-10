@@ -6,7 +6,7 @@ import datetime
 from theano.tensor.shared_randomstreams import RandomStreams
 
 from network.model.dropout_dnn import DNNDropout
-from load_data import get_minibatches
+from load_data import get_minibatches, get_bootstraps
 
 shared_layers_sizes = [512, 512]
 task_specific_sizes = [[512, 512]] * 20
@@ -73,22 +73,20 @@ if __name__ == '__main__':
     # # consider the tasks which have nonzero learning rate
     # active_tasks = [n for n in xrange(num_tasks)]
     train_error_array = [[] for n in xrange(num_tasks)]
-
+    inp, outp = get_bootstraps(bootstrap_size)
     # BOOTSTRAP 20 DATASETS OF SIZE batch_size
-    for cnt, (task, inp, outp) in enumerate(get_minibatches(
-            batch_size=bootstrap_size, num_epochs=num_bootstrap_rds, add_bias=True)):
 
-        log('> ... bootstrapping all tasks datasets and building the functions')
-        train_fn_array = []
-        valid_fn_array = []
+    log('> ... bootstrapping all tasks datasets and building the functions')
+    train_fn_array = []
+    valid_fn_array = []
 
         # build the finetuning functions for these bootstraps
-        for idx, task in enumerate(dnn_array):
-            print(inp[idx].shape, outp[idx].shape, val_x[idx].shape, val_y[idx].shape)
-            train_fn, valid_fn = dnn.build_functions(
-                (inp[idx], outp[idx]), (val_x[idx], val_y[idx]), mbatch_size)
-            train_fn_array.append(train_fn)
-            valid_fn_array.append(valid_fn)
+    for idx, task in enumerate(dnn_array):
+        print(inp[idx].shape, outp[idx].shape, val_x.shape, val_y.shape)
+        train_fn, valid_fn = dnn.build_functions(
+            (inp[idx], outp[idx]), (val_x, val_y), mbatch_size)
+        train_fn_array.append(train_fn)
+        valid_fn_array.append(valid_fn)
 
         # now we're going to train for 100 epochs per bootstrap
         for taskidx in xrange(num_tasks):
