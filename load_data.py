@@ -46,7 +46,26 @@ if not os.path.exists("data/test_inputs.npy"):
 	np.save("data/test_outputs", test_outputs)
 	np.save("data/test_tasks", test_tasks)
 
+data = []
+for i in range(len(files)):
+	s = "data/task_"+ str(i+1)
+	inp = np.load(s+"_inputs.npy").item()
+	outp = np.load(s+"_outputs.npy")
+	data.append((inp,outp))
 
+def get_minibatches(batch_size, num_epochs, add_bias=False):
+	if add_bias:
+		datap = []
+		for (inp, outp) in data:
+			i = csr_matrix(np.hstack((np.ones((inp.shape[0], 1)),inp.toarray())))
+			datap.append((i,outp))
+	else:
+		datap = data
+	for _ in range(num_epochs):
+		for i, (inp,outp) in enumerate(datap):
+			indices = np.random.randint(0,inp.shape[0], size=batch_size)
+			batch = inp[indices].toarray()
+			outs = outp[indices]
+			task = np.ones((1, batch_size))*i
+			yield task, batch, outs
 
-def get_minibatches(batch_size, add_bias=False):
-	pass

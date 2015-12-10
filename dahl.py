@@ -40,6 +40,8 @@ def main():
     inpLay0 = dnn.InputLayer('inp0', layerSizes[0])
     hidLay0 = dnn.Sigmoid('hid0', layerSizes[1])
     hidLay1 = dnn.Sigmoid('hid1', layerSizes[2])
+
+    
     # outLay0 = dnn.Softmax('out0', layerSizes[-1], k = layerSizes[-1])
     
     layers = [inpLay0, hidLay0, hidLay1, outLay0]
