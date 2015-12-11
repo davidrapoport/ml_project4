@@ -28,7 +28,7 @@ class DNNDropout(object):
 
         # sometimes you need a theano rng and not a numpy one
         if not theano_rng:
-            theano_rng = RandomStreams(numpy_rng.randint(2 ** 30))
+            theano_rng = RandomStreams(np_rng.randint(2 ** 30))
 
         # allocate symbolic variables for the data
         self.x = T.matrix('x')
@@ -99,12 +99,12 @@ class DNNDropout(object):
 
         (train_set_x, train_set_y) = train_shared_xy
         (valid_set_x, valid_set_y) = valid_shared_xy
-	
-	train_set_x = theano.shared(value=train_set_x.astype(np.float32, copy=False))/256
-	train_set_y = theano.shared(value=train_set_y.astype(np.int32, copy=False))
 
-	valid_set_x = theano.shared(value=valid_set_x.astype(np.float32, copy=False))/256
-	valid_set_y = theano.shared(value=valid_set_y.astype(np.int32, copy=False))
+        train_set_x = theano.shared(value=train_set_x.astype(np.float32, copy=False)) / 256
+        train_set_y = theano.shared(value=train_set_y.astype(np.int32, copy=False))
+
+        valid_set_x = theano.shared(value=valid_set_x.astype(np.float32, copy=False)) / 256
+        valid_set_y = theano.shared(value=valid_set_y.astype(np.int32, copy=False))
 
         index = T.lscalar('index')  # index to a [mini]batch
         learning_rate = T.fscalar('learning_rate')

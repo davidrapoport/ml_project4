@@ -35,9 +35,12 @@ def log(string):
         '[' + str(datetime.datetime.now()) + '] ' + str(string) + '\n')
 
 
-def validate_by_minibatch(valid_fn, idx):
-
-    yield
+def validate_by_minibatch(valid_fn):
+    minibatch_errors = []
+    for batchidx in xrange(valid_mbatch_per_bootstrap):
+        one_err = float(valid_fn(index=batchidx))
+        minibatch_errors.append(one_err)
+    return np.mean(minibatch_errors)
 
 if __name__ == '__main__':
 
