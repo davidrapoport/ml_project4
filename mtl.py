@@ -97,7 +97,7 @@ if __name__ == '__main__':
         valid_fn_array = []
 
         # this array holds the training errors per minibatch
-        epoch_train_error_array = []
+        epoch_train_error_array = [[] for n in xrange(num_tasks)]
 
         log('> ... building functions for bootstrap found %d' % epoch_counter)
         # build the finetuning functions for these bootstraps
