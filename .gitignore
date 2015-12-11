@@ -12,3 +12,4 @@ ignore
 *.gz
 *.aux
 mp3_report.pdf
+timeline.json
