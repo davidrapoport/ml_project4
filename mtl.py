@@ -11,6 +11,8 @@ from load_data import get_minibatches, get_bootstraps
 shared_layers_sizes = [512, 512]
 task_specific_sizes = [[512, 512]] * 20
 
+train_learning_rate = 1.0
+
 input_size = 4096
 output_size = 2
 
@@ -88,7 +90,7 @@ if __name__ == '__main__':
             # now we're going to train for 100 epochs per bootstrap
         for taskidx in xrange(num_tasks):
             for batchidx in xrange(mbatch_per_bootstrap):
-	        one_err = float(train_fn_array[taskidx](index=batchidx))
+	        one_err = float(train_fn_array[taskidx](index=batchidx, learning_rate=train_learning_rate))
                 train_error_array[taskidx].append(one_err)
             log('> task %d, epoch %d, training error %f ' % (
                 taskidx, epoch_counter, 100 * np.mean(train_error_array[taskidx])) + '(%)')

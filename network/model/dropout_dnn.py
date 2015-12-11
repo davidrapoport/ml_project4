@@ -10,7 +10,7 @@ import numpy as np
 class DNNDropout(object):
 
     def __init__(self, np_rng, hidden_layers_sizes, n_ins, n_outs, theano_rng=None,
-                 dnn_shared=None, shared_layers=[], input_dropout_factor=0.5, dropout_factor=0.5,
+                 dnn_shared=None, shared_layers=[], input_dropout_factor=0.1, dropout_factor=0.5,
                  ):
 
         self.layers = []
