@@ -17,6 +17,7 @@ class DNNDropout(object):
         self.dropout_layers = []
         self.params = []
         self.delta_params = []
+        self.max_col_norm = 2.0
 
         self.n_ins = n_ins
         self.n_outs = n_outs
