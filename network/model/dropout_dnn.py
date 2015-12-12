@@ -120,7 +120,15 @@ class DNNDropout(object):
         for dparam, param in zip(self.delta_params, self.params):
             updates[param] = param + updates[dparam]
 
-        train_fn = theano.function(inputs=[index, theano.Param(learning_rate, default=0.0001),
+        for i in xrange(self.hidden_layers_number):
+                W = self.layers[i].W
+                if W in updates:
+                    updated_W = updates[W]
+                    col_norms = T.sqrt(T.sum(T.sqr(updated_W), axis=0))
+                    desired_norms = T.clip(col_norms, 0, self.max_col_norm)
+                    updates[W] = updated_W * (desired_norms / (1e-7 + col_norms))
+
+        train_fn = theano.function(inputs=[index, theano.Param(learning_rate, default=0.1),
                                            theano.Param(momentum, default=0.5)],
                                    outputs=[self.errors, self.finetune_cost],
                                    updates=updates,
