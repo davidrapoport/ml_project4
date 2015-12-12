@@ -122,7 +122,7 @@ class DNNDropout(object):
 
         train_fn = theano.function(inputs=[index, theano.Param(learning_rate, default=0.0001),
                                            theano.Param(momentum, default=0.5)],
-                                   outputs=self.errors,
+                                   outputs=[self.errors, self.finetune_cost],
                                    updates=updates,
                                    givens={
             self.x: train_set_x[index * batch_size:
