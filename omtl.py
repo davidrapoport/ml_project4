@@ -81,18 +81,21 @@ class KNaiveBayes():
 		for i in range(self.num_tasks):
 			# Get the elements which correspond to task i
 			task = complete[complete[:,0]==i]
+			if not task.size:
+				continue
 			# Seperate the data again
 			t = task[:,0]
 			label = task[:,-1]
 			x = task[:,1:-1]
 			# Partial fit, last parameter is an array of all possible labels
+
 			self.learners[i].partial_fit(x,label,np.array([0,1]))
 
 	def score(self, tasks, inps, labels):
 		# Join tasks, inps, and labels into one matrix
 		# Reshape calls are made to convert from shape=(num_examples,) 
 		# to shape=(num_examples,1) so that we can call hstack
-		complete = np.hstack((tasks.reshape((inps.shape[0],1)),inps,labels.reshape((inps.shape[0],1)) ))
+		complete = np.hstack((tasks.reshape((-1,1)),inps,labels.reshape((-1,1)) ))
 		total = 0.0
 		for i in range(self.num_tasks):
 			task = complete[complete[:,0]==i]
@@ -195,10 +198,10 @@ class OMTL(object):
 
 
 
-def get_validation_set():
-	# Returns 3 arrays (tasks, X, y) with 1500*20 examples in each 
+def get_validation_set(batch_size=1500):
+	# Returns 3 arrays (tasks, X, y) with batch_size*20 examples in each 
 	val_tasks, val_x, val_y = np.ndarray(0), None, np.ndarray(0)
-	for task, inp, outp in get_minibatches(batch_size=1500, num_epochs=1, add_bias=True):
+	for task, inp, outp in get_minibatches(batch_size=batch_size, num_epochs=1, add_bias=True):
 		val_tasks = np.hstack((val_tasks, task.ravel()))
 		val_y = np.hstack((val_y, outp.ravel()))
 		if val_x is None:
@@ -208,7 +211,7 @@ def get_validation_set():
 	return val_tasks, val_x, val_y
 
 def grid_search():
-	# out = open("omtl_log", "w")
+	out = open("omtl_log", "w")
 	val_tasks, val_x, val_y = get_validation_set()
 	omtl_lrs = np.logspace(-28,-14,8)
 	perceptron_lrs = np.logspace(-10,4,8)
@@ -241,7 +244,8 @@ def grid_search():
 		# 	print "After %.2f s and %d it acc: %f , norm A'-A: %.2f , norm W'-W: %.2f " % ((time.time() - start), cnt, score, anorm, wnorm)
 		# 	print "Base learner scored %f" % base_score
 
-def main():
+def timeline():
+	# Generates the data file to be used to create the examples vs accuracy graph
 	val_tasks, val_x, val_y = get_validation_set()
 	learner = OMTL(epoch=40, matrix_interaction_lr=1e-20, divergence="logdet")
 	kpercepts = KPerceptrons(learn_rate=10000)
@@ -254,6 +258,7 @@ def main():
 		learner.fit(task[0].astype(int), inp, outp)
 		kpercepts.fit(task[0].astype(int), inp, outp)
 
+		# Used so we only call KNB.fit once per 100 examples
 		tasks.append(int(task[0][0]))
 		y.append(outp[0].astype(int))
 		if x is None:
@@ -274,14 +279,44 @@ def main():
 			results.append((batch, omtl_score, kpercept_score, knb_score))
 
 			tasks, x, y = [], None, []
+
 	with open("timeline.json", "w") as f:
 		json.dump(results, f)
 
+
+def test():
+	learner = OMTL(epoch=640, matrix_interaction_lr=1e-10, divergence="logdet")
+	kpercepts = KPerceptrons(learn_rate=10000)
+	knb = KNaiveBayes()
+	# Will spit out 20 batches of size 8000
+	for task, inp, outp in get_minibatches(batch_size=8000, num_epochs=1, add_bias=True):
+		knb.fit(np.asarray(task).reshape((inp.shape[0],1)), inp, np.asarray(outp).reshape((inp.shape[0],1)))
+	# Will spit out 20*3000 batches of size 1
+	for task, inp, outp in get_minibatches(batch_size=1, num_epochs=3000, add_bias=True):
+		learner.fit(task[0].astype(int), inp, outp)
+		kpercepts.fit(task[0].astype(int), inp, outp)
+	# Test_tasks.shape = (28143, 1)
+	test_tasks = np.load("data/test_tasks.npy")
+	# We need to call item on test_inputs because it is an array that contains a sparse matrix
+	# We then gotta convert it from sparse scipymatrix to nparray and add a bias 
+	test_inputs = np.load("data/test_inputs.npy").item().toarray()
+	test_inputs = np.hstack((np.ones((test_inputs.shape[0],1)), test_inputs))
+	# Test_outputs.shape = (28143,)
+	# So we need to reshape it to a (28143, 1) array
+	test_outputs = np.load("data/test_outputs.npy").reshape((test_tasks.shape[0],1))
+	# See KNB.score to see how I manipulate these three arrays so that they fit with normal
+	# SKlearn learners
+	print "KNB: %f" %knb.score(test_tasks, test_inputs, test_outputs)
+	print "OMTL: %f" % learner.score(test_tasks, test_inputs, test_outputs)
+	print "kpercepts: %f" % kpercepts.score(test_tasks, test_inputs, test_outputs)
+	print json.dumps(learner.A.tolist())
+	with open("task_relate.json","w") as f:
+		json.dump(learner.A.tolist(), f)
 
 
 
 
 
 if __name__ == '__main__':
-	main()
+	test()
 	err.close()

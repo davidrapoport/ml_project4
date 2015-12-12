@@ -34,7 +34,7 @@ if not os.path.exists("data/test_inputs.npy"):
 			np.save("data/task_%d_cids"%(num+1), Cidtrain)
 			if test_inputs is None:
 				test_inputs = csr_matrix(Xtest)
-				test_tasks = np.ones((Xtest.shape[0],1))
+				test_tasks = np.ones((Xtest.shape[0],1))*num
 				test_outputs = Ytest
 			else:
 				# pdb.set_trace()
