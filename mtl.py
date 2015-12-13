@@ -178,7 +178,7 @@ if __name__ == '__main__':
                 total_train_err += mean_train_err
 
             mean_train_error_array.append(total_train_err / num_tasks)
-            test_err = test_err / num_tasks
+            test_err = test_err / (num_tasks * 10)
 
             log('> bootstrap round %d, average cost %f ' % (
                 epoch_counter, total_cost / num_tasks))
@@ -189,7 +189,7 @@ if __name__ == '__main__':
                 epoch_counter, 100 * valid_error))
             val_error_array.append(valid_error)
 
-            log('> bootstrap round %d, TEST<I know I know, but I am debugging here...> error %f ' % (
+            log('> bootstrap round %d, TEST<I know I know...> error %f ' % (
                 epoch_counter, 100 * test_err))
 
             log('> bootstrap round %d, Mean training error %f ' % (
