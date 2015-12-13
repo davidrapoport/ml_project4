@@ -1,8 +1,16 @@
 import numpy as np
+import math
 import sys
 import datetime
 import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerLine2D
+
+# TODO: Get Validation/Training graph, and run tests (break from loop and do the stuff)
+#       Make K independent Nets
+#       Spearmint-wrap all this for model validation.
+
+# 3 npy test files
+
 from theano.tensor.shared_randomstreams import RandomStreams
 
 from network.model.dropout_dnn import DNNDropout
@@ -43,6 +51,21 @@ def validate_by_minibatch(valid_fn):
         minibatch_errors.append(one_err)
     return np.mean(minibatch_errors)
 
+def get_test_data():
+    # Test_tasks.shape = (28143, 1)
+    test_tasks = np.load("data/test_tasks.npy")
+    # We need to call item on test_inputs because it is an array that contains a sparse matrix
+    # We then gotta convert it from sparse scipymatrix to nparray and add a bias 
+    test_inputs = np.load("data/test_inputs.npy").item().toarray()
+    test_inputs = np.hstack((np.ones((test_inputs.shape[0],1)), test_inputs))
+    # Test_outputs.shape = (28143,)
+    # So we need to reshape it to a (28143, 1) array
+    test_outputs = np.load("data/test_outputs.npy").reshape((test_tasks.shape[0],1))
+    # See KNB.score to see how I manipulate these three arrays so that they fit with normal
+    # SKlearn learners
+    # print "KNB: %f" %knb.score(test_tasks, test_inputs, test_outputs)
+    return test_inputs, test_outputs, test_tasks
+
 if __name__ == '__main__':
 
     # we keep track of the training fns, valid fns, and networks
@@ -71,10 +94,12 @@ if __name__ == '__main__':
         if shareLayers:
             dnn = DNNDropout(np_rng=np_rng, theano_rng=theano_rng, hidden_layers_sizes=hidden_layers,
                             n_ins=input_size, n_outs=output_size,
+                            input_dropout_factor=0.0, dropout_factor=0.0,
                             dnn_shared=dnn_shared, shared_layers=shared_layers)
         else:
             dnn = DNNDropout(np_rng=np_rng, theano_rng=theano_rng, hidden_layers_sizes=hidden_layers,
-                            n_ins=input_size, n_outs=output_size)
+                            n_ins=input_size, n_outs=output_size,
+                            input_dropout_factor=0.1, dropout_factor=0.5)
         # add dnn and the functions to the list
         dnn_array.append(dnn)
 
@@ -82,7 +107,27 @@ if __name__ == '__main__':
     # active_tasks = [n for n in xrange(num_tasks)]
 
     valin, valout = get_bootstraps(600)
-
+    test_in, test_out, test_tasks = get_test_data()
+    complete = np.hstack((test_tasks.reshape((-1,1)),test_in,test_out.reshape((-1,1)) ))
+    total = 0.0
+    testin  = []
+    testout = []
+    for i in range(num_tasks):
+        task = complete[complete[:,0]==i]
+        t = task[0:,0]
+        label = task[:500,-1]
+        x = task[:500,2:-1]
+        testin.append(x)
+        testout.append(label)
+        print i, testin[i].shape
+        # score = self.learners[i].score(x,label)
+        # multiply score by the number of examples 
+        # for the task to get how many were correctly classified
+        # total += score*x.shape[0]
+    # return total / float(inps.shape[0])
+    print  testin[1].shape
+    print testout[1].shape
+    print valin[1].shape
     log('> ... bootstrapping all tasks datasets and building the functions')
 
     # keep track of the training error in order to create the train/validation
@@ -100,6 +145,7 @@ if __name__ == '__main__':
             # create new function arrays for the respective bootstrap
             train_fn_array = []
             valid_fn_array = []
+            test_fn_array = []
 
             # this array holds the training errors per minibatch
             epoch_train_error_array = [[] for n in xrange(num_tasks)]
@@ -107,13 +153,15 @@ if __name__ == '__main__':
             log('> ... building functions for bootstrap found %d' % epoch_counter)
             # build the finetuning functions for these bootstraps
             for idx, task in enumerate(dnn_array):
-                train_fn, valid_fn = dnn.build_functions(
-                    (inp[idx], outp[idx]), (valin[idx], valout[idx]), mbatch_size)
+                train_fn, valid_fn, test_fn = dnn.build_functions(
+                    (inp[idx], outp[idx]), (valin[idx], valout[idx]), (testin[idx], testout[idx]), mbatch_size)
                 train_fn_array.append(train_fn)
                 valid_fn_array.append(valid_fn)
+                test_fn_array.append(test_fn)
 
             total_train_err = 0.0
             total_cost = 0.0
+            test_err = 0.0
             # now we're going to train
             for taskidx in xrange(num_tasks):
                 for batchidx in xrange(mbatch_per_bootstrap):
@@ -121,12 +169,16 @@ if __name__ == '__main__':
                     one_err = float(one_err)
                     total_cost += one_cost
                     epoch_train_error_array[taskidx].append(one_err)
+                    batch_test_err = test_fn_array[taskidx](index=batchidx)
+                    if not math.isnan(batch_test_err): 
+                        test_err += batch_test_err
                 mean_train_err = np.mean(epoch_train_error_array[taskidx])
                 log('> task %d, bootstrap round %d, training error %f ' % (
                     taskidx, epoch_counter, 100 * mean_train_err) + '(%)')
                 total_train_err += mean_train_err
-            mean_train_error_array.append(total_train_err / num_tasks)
 
+            mean_train_error_array.append(total_train_err / num_tasks)
+            test_err = test_err / num_tasks
 
             log('> bootstrap round %d, average cost %f ' % (
                 epoch_counter, total_cost / num_tasks))
@@ -136,6 +188,9 @@ if __name__ == '__main__':
             log('> bootstrap round %d, validation error %f ' % (
                 epoch_counter, 100 * valid_error))
             val_error_array.append(valid_error)
+
+            log('> bootstrap round %d, TEST<I know I know, but I am debugging here...> error %f ' % (
+                epoch_counter, 100 * test_err))
 
             log('> bootstrap round %d, Mean training error %f ' % (
                 epoch_counter, 100 * total_train_err / float(num_tasks)))
