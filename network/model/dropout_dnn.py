@@ -96,16 +96,20 @@ class DNNDropout(object):
             self.y)
         self.errors = self.logLayer.errors(self.y)
 
-    def build_functions(self, train_shared_xy, valid_shared_xy, batch_size):
+    def build_functions(self, train_shared_xy, valid_shared_xy, test_shared_xy, batch_size):
 
         (train_set_x, train_set_y) = train_shared_xy
         (valid_set_x, valid_set_y) = valid_shared_xy
+        (test_set_x, test_set_y) = test_shared_xy
 
         train_set_x = theano.shared(value=train_set_x.astype(np.float32, copy=False)) / 256
         train_set_y = theano.shared(value=train_set_y.astype(np.int32, copy=False))
 
         valid_set_x = theano.shared(value=valid_set_x.astype(np.float32, copy=False)) / 256
         valid_set_y = theano.shared(value=valid_set_y.astype(np.int32, copy=False))
+
+        test_set_x = theano.shared(value=test_set_x.astype(np.float32, copy=False)) / 256
+        test_set_y = theano.shared(value=test_set_y.astype(np.int32, copy=False))
 
         index = T.lscalar('index')  # index to a [mini]batch
         learning_rate = T.fscalar('learning_rate')
@@ -147,4 +151,14 @@ class DNNDropout(object):
             self.y: valid_set_y[index * batch_size:
                                 (index + 1) * batch_size]})
 
-        return train_fn, valid_fn
+        test_fn = theano.function(inputs=[index],
+                                   outputs=self.errors,
+                                   givens={
+            self.x: test_set_x[index * batch_size:
+                                (index + 1) * batch_size],
+            self.y: test_set_y[index * batch_size:
+                                (index + 1) * batch_size]})
+
+        return train_fn, valid_fn, test_fn
+
+
