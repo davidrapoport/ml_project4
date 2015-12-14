@@ -22,7 +22,7 @@ class LogisticRegression(object):
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         if W is None:
             self.W = theano.shared(
-                value=np.zeros((n_in, n_out), dtype=theano.config.floatX),
+                value=np.random.randn(n_in, n_out).astype(theano.config.floatX),
                 name='W')
         else:
             self.W = W
@@ -30,7 +30,7 @@ class LogisticRegression(object):
         # initialize the baises b as a vector of n_out 0s
         if b is None:
             self.b = theano.shared(
-                value=np.zeros((n_out,), dtype=theano.config.floatX),
+                value=np.ones((n_out,), dtype=theano.config.floatX),
                 name='b')
         else:
             self.b = b
