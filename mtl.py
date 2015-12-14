@@ -15,10 +15,13 @@ from theano.tensor.shared_randomstreams import RandomStreams
 
 from network.model.dropout_dnn import DNNDropout
 from load_data import get_bootstraps
+from load_data import data as hardcode_data
 
-shareLayers = True
+shareLayers = False
+
+num_tasks = 20
 shared_layers_sizes = [512, 512]
-task_specific_sizes = [[512, 512]] * 20
+task_specific_sizes = [[512, 512]] * num_tasks
 
 train_learning_rate = 150.0
 
@@ -34,8 +37,12 @@ valid_mbatch_per_bootstrap = 600 / mbatch_size
 bootstrap_size = 1500
 mbatch_per_bootstrap = bootstrap_size / mbatch_size
 
-num_tasks = len(task_specific_sizes)
 shared_layers_num = len(shared_layers_sizes)
+
+rand_indices = np.random.randint(0,hardcode_data[2][0].shape[0], 3000)
+def get_bootsraps(size):
+    ins, outs = hardcode_data[2]
+    return ([ins[rand_indices].toarray()], [outs[rand_indices]])
 
 
 def log(string):
@@ -125,9 +132,6 @@ if __name__ == '__main__':
         # for the task to get how many were correctly classified
         # total += score*x.shape[0]
     # return total / float(inps.shape[0])
-    print  testin[1].shape
-    print testout[1].shape
-    print valin[1].shape
     log('> ... bootstrapping all tasks datasets and building the functions')
 
     # keep track of the training error in order to create the train/validation
@@ -135,6 +139,7 @@ if __name__ == '__main__':
     mean_train_error_array = []#[[] for n in xrange(num_tasks)]
     epoch_train_error_array = [[] for n in xrange(num_tasks)]
     val_error_array = []#[[] for n in xrange(num_tasks)]
+    test_error_array = []
     epoch_counter = 0
 
     try:
@@ -194,6 +199,7 @@ if __name__ == '__main__':
 
             log('> bootstrap round %d, Mean training error %f ' % (
                 epoch_counter, 100 * total_train_err / float(num_tasks)))
+            test_error_array.append(total_train_err / float(num_tasks))
 
             # increment the epoch counter
             epoch_counter += 1
@@ -202,7 +208,7 @@ if __name__ == '__main__':
         print mean_train_error_array
 
         training, = plt.plot(range(len(mean_train_error_array)), mean_train_error_array, 'p--', label='Training')
-        validation, = plt.plot(range(len(val_error_array)), val_error_array, 'g--', label='Validation')
+        validation, = plt.plot(range(len(test_error_array)), test_error_array, 'g--', label='Validation')
         plt.ylabel('Error')
         plt.xlabel('Epoch')
         plt.legend(handler_map={training: HandlerLine2D(numpoints=2), validation: HandlerLine2D(numpoints=2)})
