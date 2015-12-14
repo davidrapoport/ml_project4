@@ -13,16 +13,34 @@ if not os.path.exists("analysis.json"):
 			continue
 		with open("data/"+csv_file, "r") as f:
 			arr = np.loadtxt(f, delimiter=',', skiprows=1)
-			d['num_features'] = arr.shape[1]
-			d['num_candidates'] = arr.shape[0]
-			d['cids'] = [int(cid) for cid in arr[:,0].tolist()]
-			d['num_not_zeros'] = (arr >0).sum()
-			d['percent_not_zeros'] = float(d['num_not_zeros'])/ arr.size
+			x = arr[:,1:-1]
+			y = arr[:,-1]
+			d['num_features'] = x.shape[1] 
+			d['num_candidates'] = x.shape[0]
+			# d['cids'] = [int(cid) for cid in x[:,0].tolist()]
+			d['num_not_zeros'] = (x >0).sum()
+			d['percent_not_zeros'] = float(d['num_not_zeros'])/ x.size
+			d['num_activated'] = (y>0).sum()
+			d['percent_activated']= float((y>0).sum())/y.size
 			# if (arr == 21138.0).sum()>1:
 			# 	print (arr == 21138.0).sum()
 			# 	print csv_file
 			info[csv_file] = d
 			# print d
+	num_tasks = len(info.keys())
+	total_activated = 0.0
+	total_nonzero = 0.0
+	total_examples = 0.0
+	for f in info.values():
+		total_examples += f['num_candidates']
+		total_nonzero += f['num_not_zeros']
+		total_activated += f['num_activated']
+	info['average_activated'] = float(total_activated)/float(total_examples)
+	info['average_nonzero'] = float(total_nonzero)/float(total_examples*4096.0)
+	info['total_examples'] = total_examples
+	info['total_nonzero'] = total_nonzero
+	info['total_activated'] = total_activated
+
 	with open("analysis.json","w") as f:
 		json.dump(info, f)
 else:
@@ -76,4 +94,4 @@ def confusion_matrix():
 
 	# plt.show()
 
-confusion_matrix()
+# confusion_matrix()
