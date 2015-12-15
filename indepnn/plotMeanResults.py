@@ -48,6 +48,7 @@ if __name__ == '__main__':
 				train_err.append(float(line.split(' ')[-2]))
 			elif "validation" in line:
 				val_err.append(float(line.split(' ')[-2]))
+		plot(train_err, val_err)
 		task_train_err.append(train_err)
 		task_val_err.append(val_err)
 
