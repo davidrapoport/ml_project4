@@ -10,9 +10,10 @@ import numpy as np
 class DNNDropout(object):
 
     def __init__(self, np_rng, hidden_layers_sizes, n_ins, n_outs, theano_rng=None,
-                 dnn_shared=None, shared_layers=[], input_dropout_factor=0.1, dropout_factor=0.5,
+                 dnn_shared=None, shared_layers=None, input_dropout_factor=0.1, dropout_factor=0.5,
                  ):
-
+        if shared_layers is None:
+            shared_layers = []
         self.layers = []
         self.dropout_layers = []
         self.params = []
@@ -96,17 +97,21 @@ class DNNDropout(object):
             self.y)
         self.errors = self.logLayer.errors(self.y)
 
-    def build_functions(self, train_shared_xy, valid_shared_xy, test_shared_xy, batch_size):
+    def build_functions(self, train_shared_xy, valid_shared_xy, test_shared_xy, batch_size, onlyTrain=False):
 
         (train_set_x, train_set_y) = train_shared_xy
-        (valid_set_x, valid_set_y) = valid_shared_xy
-        (test_set_x, test_set_y) = test_shared_xy
-
+        if not onlyTrain:
+            (valid_set_x, valid_set_y) = valid_shared_xy
+            (test_set_x, test_set_y) = test_shared_xy
         train_set_x = theano.shared(value=train_set_x.astype(np.float32, copy=False)) / 256
         train_set_y = theano.shared(value=train_set_y.astype(np.int32, copy=False))
 
-        valid_set_x = theano.shared(value=valid_set_x.astype(np.float32, copy=False)) / 256
-        valid_set_y = theano.shared(value=valid_set_y.astype(np.int32, copy=False))
+        if not onlyTrain:
+            valid_set_x = theano.shared(value=valid_set_x.astype(np.float32, copy=False)) / 256
+            valid_set_y = theano.shared(value=valid_set_y.astype(np.int32, copy=False))
+
+            test_set_x = theano.shared(value=test_set_x.astype(np.float32, copy=False)) / 256
+            test_set_y = theano.shared(value=test_set_y.astype(np.int32, copy=False))
 
         test_set_x = theano.shared(value=test_set_x.astype(np.float32, copy=False)) / 256
         test_set_y = theano.shared(value=test_set_y.astype(np.int32, copy=False))
@@ -143,22 +148,23 @@ class DNNDropout(object):
             self.y: train_set_y[index * batch_size:
                                 (index + 1) * batch_size]})
 
-        valid_fn = theano.function(inputs=[index],
-                                   outputs=self.errors,
-                                   givens={
-            self.x: valid_set_x[index * batch_size:
-                                (index + 1) * batch_size],
-            self.y: valid_set_y[index * batch_size:
-                                (index + 1) * batch_size]})
+        if not onlyTrain:
 
-        test_fn = theano.function(inputs=[index],
-                                   outputs=self.errors,
-                                   givens={
-            self.x: test_set_x[index * batch_size:
-                                (index + 1) * batch_size],
-            self.y: test_set_y[index * batch_size:
-                                (index + 1) * batch_size]})
+            valid_fn = theano.function(inputs=[index],
+                                       outputs=self.errors,
+                                       givens={
+                self.x: valid_set_x[index * batch_size:
+                                    (index + 1) * batch_size],
+                self.y: valid_set_y[index * batch_size:
+                                    (index + 1) * batch_size]})
 
-        return train_fn, valid_fn, test_fn
+            test_fn = theano.function(inputs=[index],
+                                       outputs=self.errors,
+                                       givens={
+                self.x: test_set_x[index * batch_size:
+                                    (index + 1) * batch_size],
+                self.y: test_set_y[index * batch_size:
+                                    (index + 1) * batch_size]})
 
-
+            return train_fn, valid_fn, test_fn
+        return train_fn, None, None

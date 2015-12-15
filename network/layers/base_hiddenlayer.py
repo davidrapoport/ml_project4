@@ -34,14 +34,7 @@ class HiddenLayer(object):
         self.input = input
         # initialize the weights
         if W is None:
-            W_values = np.asarray(
-                rng.uniform(
-                    low=-np.sqrt(6. / (n_in + n_out)),
-                    high=np.sqrt(6. / (n_in + n_out)),
-                    size=(n_in, n_out)
-                ),
-                dtype=theano.config.floatX
-            )
+            W_values = np.random.randn(n_in, n_out).astype(theano.config.floatX)
             if activation == theano.tensor.nnet.sigmoid:
                 W_values *= 4
 
