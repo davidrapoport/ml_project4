@@ -12,18 +12,26 @@ export PYTHONPATH=$PYTHONPATH:$pdnndir
 # you will see train.pickle.gz, valid.pickle.gz, test.pickle.gz
 
 # train DNN model
-echo "Training the DNN model ..."
-python $pdnndir/cmds/run_DNN.py --train-data "data/train_1.pickle.gz" \
-                                --valid-data "data/validate_1.pickle.gz" \
-                                --nnet-spec "784:1024:1024:10" --wdir ./ \
-                                --l2-reg 0.0001 --lrate "C:0.1:200" --model-save-step 20 \
-                                --param-output-file dnn.param --cfg-output-file dnn.cfg  >& dnn.training.log
 
-# # classification on the testing data; -1 means the final layer, that is, the classification softmax layer
-# echo "Classifying with the DNN model ..."
-# python $pdnndir/cmds/run_Extract_Feats.py --data "test.pickle.gz" \
-#                                           --nnet-param dnn.param --nnet-cfg dnn.cfg \
-#                                           --output-file "dnn.classify.pickle.gz" --layer-index -1 \
-#                                           --batch-size 100 >& dnn.testing.log
+for i in `seq 1 20`;
+do
+	echo "Training the DNN model $i ..."
+	python $pdnndir/cmds/run_DNN.py --train-data "data/train_$i.pickle.gz" \
+	                                --valid-data "data/validate_$i.pickle.gz" \
+	                                --nnet-spec "4096:512:512:2" --wdir ./ \
+	                                --lrate "C:0.1:50" --model-save-step 50 \
+	                                --param-output-file dnn_$i.param --cfg-output-file dnn_$i.cfg \
+	                                --batch-size 40 >& dnn_$i.log #--dropout-factor 0.8,0.8 --input-dropout-factor 0.5
 
-# python show_results.py dnn.classify.pickle.gz
+	# classification on the testing data; -1 means the final layer, that is, the classification softmax layer
+	echo "Classifying with the DNN model $i ..."
+	python $pdnndir/cmds/run_Extract_Feats.py --data "data/test_$i.pickle.gz" \
+	                                          --nnet-param dnn_$i.param --nnet-cfg dnn_$i.cfg \
+	                                          --output-file "dnn_$i.classify.pickle.gz" --layer-index -1 \
+	                                          --batch-size 40 >& dnn_$i.testing.log
+
+	python show_results.py dnn_$i.classify.pickle.gz $i
+done
+
+
+

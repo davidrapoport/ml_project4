@@ -16,9 +16,12 @@ for i in range(len(files)):
     s = "../data/task_"+ str(i+1)
     inp = np.load(s+"_inputs.npy").item().toarray().astype(np.float32)
     outp = np.load(s+"_outputs.npy").astype(np.float32)
-    trainX = inp[:len(inp)*9.0/10.0]
-    trainY = outp[:len(inp)*9.0/10.0]
-    valX = inp[len(inp)*9.0/10.0:]
-    valY = outp[len(inp)*9.0/10.0:]
+    trainX = inp[:len(inp)*8.0/10.0]
+    trainY = outp[:len(inp)*8.0/10.0]
+    valX = inp[len(inp)*8.0/10.0:len(inp)*9.0/10.0]
+    valY = outp[len(inp)*8.0/10.0:len(inp)*9.0/10.0]
+    testX = inp[len(inp)*9.0/10.0:]
+    testY = outp[len(inp)*9.0/10.0:]
     cPickle.dump((trainX, trainY), gzip.open('data/train_'+ str(i+1) +'.pickle.gz','wb'), cPickle.HIGHEST_PROTOCOL)
     cPickle.dump((valX, valY), gzip.open('data/validate_'+ str(i+1) +'.pickle.gz','wb'), cPickle.HIGHEST_PROTOCOL)
+    cPickle.dump((testX, testY), gzip.open('data/test_'+ str(i+1) +'.pickle.gz','wb'), cPickle.HIGHEST_PROTOCOL)

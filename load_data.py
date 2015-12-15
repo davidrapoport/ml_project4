@@ -28,23 +28,23 @@ if not os.path.exists("data/test_inputs.npy"):
 			arr = arr[:,1:]
 			targets = arr[:,-1]
 			xs = arr[:,:-1]
-			Xtrain, Xtest, Ytrain, Ytest, Cidtrain, Cidtest= train_test_split(xs, targets, cids, test_size=0.2, random_state=8753)
+			Xtrain, Xtest, Ytrain, Ytest, Cidtrain, Cidtest= train_test_split(xs, targets, cids, test_size=0.0, random_state=8753)
 			np.save("data/task_%d_inputs"%(num+1), csr_matrix(Xtrain))
 			np.save("data/task_%d_outputs"%(num+1), Ytrain)
 			np.save("data/task_%d_cids"%(num+1), Cidtrain)
-			if test_inputs is None:
-				test_inputs = csr_matrix(Xtest)
-				test_tasks = np.ones((Xtest.shape[0],1))*num
-				test_outputs = Ytest
-			else:
-				# pdb.set_trace()
-				test_inputs = vstack((test_inputs, csr_matrix(Xtest)))
-				temp = np.ones((Xtest.shape[0],1))*num
-				test_tasks = np.vstack((test_tasks, temp))
-				test_outputs = np.concatenate((test_outputs, Ytest))
-	np.save("data/test_inputs", test_inputs)
-	np.save("data/test_outputs", test_outputs)
-	np.save("data/test_tasks", test_tasks)
+	# 		if test_inputs is None:
+	# 			test_inputs = csr_matrix(Xtest)
+	# 			test_tasks = np.ones((Xtest.shape[0],1))*num
+	# 			test_outputs = Ytest
+	# 		else:
+	# 			# pdb.set_trace()
+	# 			test_inputs = vstack((test_inputs, csr_matrix(Xtest)))
+	# 			temp = np.ones((Xtest.shape[0],1))*num
+	# 			test_tasks = np.vstack((test_tasks, temp))
+	# 			test_outputs = np.concatenate((test_outputs, Ytest))
+	# np.save("data/test_inputs", test_inputs)
+	# np.save("data/test_outputs", test_outputs)
+	# np.save("data/test_tasks", test_tasks)
 
 data = []
 for i in range(len(files)):

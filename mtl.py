@@ -17,7 +17,7 @@ from network.model.dropout_dnn import DNNDropout
 from load_data import get_bootstraps
 from load_data import data as hardcode_data
 
-shareLayers = False
+shareLayers = True
 
 num_tasks = 20
 shared_layers_sizes = [512, 512]
@@ -141,27 +141,31 @@ if __name__ == '__main__':
     test_error_array = []
     epoch_counter = 0
 
+    # create new function arrays for the respective bootstrap
+    train_fn_array = []
+    valid_fn_array = []
+    test_fn_array = []
+
+    inp, outp = get_bootstraps(bootstrap_size)
+    log('> ... building functions for bootstrap found %d' % epoch_counter)
+    # build the finetuning functions for these bootstraps
+    for idx, task in enumerate(dnn_array):
+        train_fn, valid_fn, test_fn = dnn.build_functions(
+            (inp[idx], outp[idx]), (None, None), (testin[idx], testout[idx]), mbatch_size, True)
+        train_fn_array.append(train_fn)
+        valid_fn_array.append(valid_fn)
+        test_fn_array.append(test_fn)
+
     try:
         # keep making bootstraps yo
         while(True):
-            inp, outp = get_bootstraps(bootstrap_size)
 
-            # create new function arrays for the respective bootstrap
-            train_fn_array = []
-            valid_fn_array = []
-            test_fn_array = []
+
 
             # this array holds the training errors per minibatch
             epoch_train_error_array = [[] for n in xrange(num_tasks)]
 
-            log('> ... building functions for bootstrap found %d' % epoch_counter)
-            # build the finetuning functions for these bootstraps
-            for idx, task in enumerate(dnn_array):
-                train_fn, valid_fn, test_fn = dnn.build_functions(
-                    (inp[idx], outp[idx]), (valin[idx], valout[idx]), (testin[idx], testout[idx]), mbatch_size)
-                train_fn_array.append(train_fn)
-                valid_fn_array.append(valid_fn)
-                test_fn_array.append(test_fn)
+           
 
             total_train_err = 0.0
             total_cost = 0.0
